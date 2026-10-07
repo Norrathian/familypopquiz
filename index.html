@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <title>Trivia Game</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Young+Serif&display=swap');
+    :root {
+      color-scheme: light dark;
+      --bg:#f4efe5; --surface:#fffdf7; --surface2:#ede5d7; --ink:#17201d; --muted:#5d675f;
+      --line:#cfc5b4; --accent:#087f72; --accent-ink:#ffffff; --hot:#e4572e; --gold:#d9990b;
+      --blue:#2f69b3; --shadow:0 18px 45px rgba(66,52,30,.13); --radius:24px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#111715; --surface:#1a211e; --surface2:#242d29; --ink:#f6f2e8; --muted:#b8c0ba; --line:#3a4741; --accent:#47c7b6; --accent-ink:#08201c; --hot:#ff805a; --gold:#f1bd43; --blue:#75aaf0; --shadow:0 18px 45px rgba(0,0,0,.28); }
+    }
+    *{box-sizing:border-box}
+    html,body{min-height:100%;margin:0}
+    body{font-family:"DM Sans",sans-serif;background:
+      radial-gradient(circle at 8% 12%, color-mix(in srgb,var(--gold) 15%,transparent) 0 9%,transparent 10%),
+      radial-gradient(circle at 92% 82%, color-mix(in srgb,var(--accent) 14%,transparent) 0 12%,transparent 13%),var(--bg);color:var(--ink)}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,input:focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 70%,white);outline-offset:3px}
+    .app{width:min(1100px,100%);margin:0 auto;padding:clamp(18px,4vw,48px)}
+    .screen{display:none}.screen.active{display:block}
+    .intro-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(28px,6vw,72px);align-items:center;min-height:calc(100vh - 96px)}
+    .kicker{font-weight:700;color:var(--accent);letter-spacing:.02em;margin:0 0 10px}
+    h1,h2,h3,p{margin-top:0}
+    h1,h2{font-family:"Young Serif",serif;font-weight:400;line-height:1.04}
+    h1{font-size:clamp(46px,8vw,88px);margin-bottom:22px;max-width:9ch}
+    h2{font-size:clamp(32px,5vw,54px);margin-bottom:12px}
+    .lede{font-size:clamp(17px,2vw,21px);line-height:1.55;color:var(--muted);max-width:52ch}
+    .facts{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 0;padding:0;list-style:none}
+    .facts li{border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 78%,transparent);padding:9px 13px;border-radius:999px;font-weight:600}
+    .setup-card{background:var(--surface);border:1px solid var(--line);border-radius:30px;padding:clamp(22px,4vw,38px);box-shadow:var(--shadow)}
+    .setup-card h3{font-size:20px;margin-bottom:16px}
+    .names{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    label{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+    input{width:100%;margin-top:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:13px 14px;border-radius:12px}
+    .lengths{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0 22px}
+    .length{padding:12px 8px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);text-align:center}
+    .length strong,.length span{display:block}.length span{font-size:12px;color:var(--muted);margin-top:2px}
+    .length.selected{background:var(--ink);color:var(--bg);border-color:var(--ink)}.length.selected span{color:inherit;opacity:.72}
+    .primary,.secondary,.score-btn{border:0;border-radius:14px;font-weight:700;min-height:50px;padding:0 20px}
+    .primary{background:var(--accent);color:var(--accent-ink);width:100%;font-size:17px}
+    .secondary{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+    .rule-note{font-size:13px;color:var(--muted);line-height:1.5;margin:14px 0 0}
+    .game-head{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end;margin-bottom:18px}
+    .progress-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--muted);font-weight:600}
+    .progress-track{height:9px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:10px;border:1px solid var(--line)}
+    .progress-fill{height:100%;width:0;background:var(--accent);transition:width .35s ease}
+    .timer{width:86px;height:86px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(var(--hot) calc(var(--time,1)*1turn),var(--surface2) 0);transition:background .2s linear}
+    .timer::before{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--surface)}
+    .timer-content{position:relative;text-align:center;line-height:1}.timer strong{font-size:27px}.timer span{display:block;font-size:10px;color:var(--muted);margin-top:4px;font-weight:700}
+    .timer.danger{animation:pulse 1s infinite}@keyframes pulse{50%{transform:scale(1.04)}}
+    .scores{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+    .player{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 14px;display:flex;justify-content:space-between;gap:8px;align-items:center;min-width:0;transition:.2s}
+    .player.active{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+    .player-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}.player-score{font-family:"Young Serif",serif;font-size:24px;color:var(--accent)}
+    .question-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(24px,5vw,54px);min-height:390px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+    .question-card::after{content:"?";position:absolute;right:-10px;bottom:-85px;font-family:"Young Serif";font-size:300px;color:color-mix(in srgb,var(--accent) 7%,transparent);pointer-events:none}
+    .category{color:var(--hot);font-weight:700;margin-bottom:20px;position:relative;z-index:1}.question{font-family:"Young Serif",serif;font-size:clamp(29px,5vw,52px);line-height:1.15;max-width:18ch;position:relative;z-index:1;margin-bottom:30px}
+    .answer{display:none;position:relative;z-index:1;border-top:1px solid var(--line);padding-top:22px;font-size:clamp(20px,3vw,28px);color:var(--accent);font-weight:700}.answer.show{display:block}
+    .controls{display:flex;gap:10px;margin-top:16px;align-items:center}.controls .primary{width:auto;flex:1}.controls .secondary{flex:0 0 auto}
+    .judgement{display:none;margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:15px}.judgement.show{display:block}
+    .judge-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.score-btn.correct{background:var(--accent);color:var(--accent-ink)}.score-btn.miss{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+    .steal-row{border-top:1px solid var(--line);margin-top:13px;padding-top:13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.steal-row span{font-size:13px;color:var(--muted);font-weight:700}.steal{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:8px 11px;font-weight:600}
+    .finish{text-align:center;max-width:760px;margin:0 auto;padding:8vh 0}.trophy{width:108px;height:108px;margin:0 auto 22px;display:grid;place-items:center;border-radius:50%;background:var(--gold);color:#2c2004;font-size:54px;font-family:"Young Serif";box-shadow:var(--shadow)}
+    .winner-copy{font-size:20px;color:var(--muted);margin-bottom:30px}.final-list{display:grid;gap:10px;margin:0 auto 24px;max-width:520px;text-align:left}.final-row{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:14px 16px}.rank{font-family:"Young Serif";font-size:24px;color:var(--hot)}.final-row strong:last-child{font-size:22px;color:var(--accent)}
+    .finish-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:520px;margin:auto}
+    .toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:999px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:5}.toast.show{opacity:1;transform:translate(-50%,0)}
+    @media(max-width:760px){
+      .app{padding:18px}.intro-grid{grid-template-columns:1fr;min-height:auto;padding:30px 0}.intro-copy{padding-top:10px}h1{font-size:52px}.setup-card{border-radius:22px}.names{grid-template-columns:1fr}.game-head{align-items:center}.timer{width:72px;height:72px}.timer strong{font-size:23px}.scores{grid-template-columns:1fr 1fr}.player{padding:10px 12px}.question-card{min-height:330px;padding:26px 22px}.question{font-size:31px}.controls{align-items:stretch}.controls .secondary{padding:0 15px}.judge-row{grid-template-columns:1fr}.finish-actions{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="screen active" id="setupScreen">
+      <div class="intro-grid">
+        <div class="intro-copy">
+          <p class="kicker">Four players. One crown.</p>
+          <h1>Bring your best guesses.</h1>
+          <p class="lede">A lively, pass-the-screen trivia night packed with movies, TV shows, music, and pop culture — plus a built-in timer, steals, and over an hour of play.</p>
+          <ul class="facts"><li>Movies, TV & pop culture</li><li>100-question bank</li><li>45-second timer</li></ul>
+        </div>
+        <div class="setup-card">
+          <h3>Who’s playing?</h3>
+          <div class="names">
+            <label>Player 1<input id="p1" maxlength="18" value="Player 1" autocomplete="off"></label>
+            <label>Player 2<input id="p2" maxlength="18" value="Player 2" autocomplete="off"></label>
+            <label>Player 3<input id="p3" maxlength="18" value="Player 3" autocomplete="off"></label>
+            <label>Player 4<input id="p4" maxlength="18" value="Player 4" autocomplete="off"></label>
+          </div>
+          <h3 style="margin-top:24px;margin-bottom:10px">Choose a game length</h3>
+          <div class="lengths" role="group" aria-label="Game length">
+            <button class="length" data-rounds="10"><strong>10 rounds</strong><span>40 questions</span></button>
+            <button class="length selected" data-rounds="12"><strong>12 rounds</strong><span>48 questions</span></button>
+            <button class="length" data-rounds="15"><strong>15 rounds</strong><span>60 questions</span></button>
+          </div>
+          <button class="primary" id="startBtn">Start the showdown</button>
+          <p class="rule-note">On each turn, read the question aloud. Correct answers earn 1 point. A missed question can be stolen by another player for ½ point.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="gameScreen">
+      <div class="game-head">
+        <div>
+          <div class="progress-meta"><span id="roundLabel">Round 1 of 12</span><span>•</span><span id="turnLabel">Question 1 of 48</span></div>
+          <div class="progress-track" aria-label="Game progress"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+        <button class="timer" id="timerBtn" aria-label="Pause timer" style="--time:1"><span class="timer-content"><strong id="timerNum">45</strong><span id="timerState">seconds</span></span></button>
+      </div>
+      <div class="scores" id="scoreboard"></div>
+      <article class="question-card">
+        <div class="category" id="category">SCIENCE</div>
+        <p class="question" id="question"></p>
+        <div class="answer" id="answer"></div>
+      </article>
+      <div class="controls" id="questionControls">
+        <button class="secondary" id="skipBtn">Swap question</button>
+        <button class="primary" id="revealBtn">Reveal answer</button>
+      </div>
+      <div class="judgement" id="judgement">
+        <div class="judge-row"><button class="score-btn correct" id="correctBtn">Correct · +1</button><button class="score-btn miss" id="missBtn">No point · next</button></div>
+        <div class="steal-row" id="stealRow"><span>Award a ½-point steal:</span></div>
+      </div>
+    </section>
+
+    <section class="screen" id="finishScreen">
+      <div class="finish">
+        <div class="trophy">1</div>
+        <p class="kicker">Final scores</p>
+        <h2 id="winnerTitle">A trivia champion emerges.</h2>
+        <p class="winner-copy" id="winnerCopy"></p>
+        <div class="final-list" id="finalList"></div>
+        <div class="finish-actions"><button class="secondary" id="samePlayersBtn">Rematch, same players</button><button class="primary" id="newGameBtn">New game</button></div>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  const Q=[
+  ["Blockbusters", "In Jaws, what is the name of the shark-hunting boat?", "The Orca"],
+  ["Blockbusters", "Which 1993 film centers on a theme park filled with cloned dinosaurs?", "Jurassic Park"],
+  ["Blockbusters", "Who directed Titanic?", "James Cameron"],
+  ["Blockbusters", "What fictional African nation is home to Black Panther?", "Wakanda"],
+  ["Blockbusters", "In Top Gun, what is Pete Mitchell's call sign?", "Maverick"],
+  ["Blockbusters", "Which actor played the title archaeologist in the Indiana Jones films?", "Harrison Ford"],
+  ["Blockbusters", "What 1985 film features a time-traveling DeLorean?", "Back to the Future"],
+  ["Blockbusters", "In The Matrix, which color pill does Neo take?", "The red pill"],
+  ["Blockbusters", "Which film franchise features the character Ethan Hunt?", "Mission: Impossible"],
+  ["Blockbusters", "What is the subtitle of the second Star Wars film released in theaters?", "The Empire Strikes Back"],
+  ["TV Classics", "What city is the sitcom Cheers set in?", "Boston"],
+  ["TV Classics", "In Friends, what is the name of Ross Geller's sister?", "Monica"],
+  ["TV Classics", "Which TV family lives at 742 Evergreen Terrace?", "The Simpsons"],
+  ["TV Classics", "What is the name of the paper company in The Office?", "Dunder Mifflin"],
+  ["TV Classics", "Which series follows FBI agents Mulder and Scully?", "The X-Files"],
+  ["TV Classics", "Who is the captain of the USS Enterprise in Star Trek: The Next Generation?", "Jean-Luc Picard"],
+  ["TV Classics", "Which sitcom stars a psychiatrist who hosts a Seattle radio show?", "Frasier"],
+  ["TV Classics", "What island-set drama begins with the crash of Oceanic Flight 815?", "Lost"],
+  ["TV Classics", "In Seinfeld, what is Kramer's first name?", "Cosmo"],
+  ["TV Classics", "Which fantasy series features the houses Stark, Lannister, and Targaryen?", "Game of Thrones"],
+  ["Comedy", "Who played the title character in Mrs. Doubtfire?", "Robin Williams"],
+  ["Comedy", "In Mean Girls, what day does Aaron Samuels ask Cady what day it is?", "October 3"],
+  ["Comedy", "Which comedy features the fictional news anchor Ron Burgundy?", "Anchorman: The Legend of Ron Burgundy"],
+  ["Comedy", "In Home Alone, where is the McCallister family traveling when Kevin is left behind?", "Paris"],
+  ["Comedy", "What is the name of the summer camp in Wet Hot American Summer?", "Camp Firewood"],
+  ["Comedy", "Which actor plays Buddy in Elf?", "Will Ferrell"],
+  ["Comedy", "In Clueless, what is Cher's last name?", "Horowitz"],
+  ["Comedy", "Which 1993 comedy repeats the same day over and over?", "Groundhog Day"],
+  ["Comedy", "What sport is at the center of Caddyshack?", "Golf"],
+  ["Comedy", "Which mockumentary follows the rock band Spinal Tap?", "This Is Spinal Tap"],
+  ["Animation", "What is the name of the cowboy toy in Toy Story?", "Woody"],
+  ["Animation", "Which Disney film features the song 'Under the Sea'?", "The Little Mermaid"],
+  ["Animation", "What kind of fish is Nemo in Finding Nemo?", "A clownfish"],
+  ["Animation", "Who is Simba's father in The Lion King?", "Mufasa"],
+  ["Animation", "Which animated film features the emotions Joy, Sadness, Anger, Fear, and Disgust?", "Inside Out"],
+  ["Animation", "What is the name of the kingdom in Frozen?", "Arendelle"],
+  ["Animation", "Which ogre lives in a swamp with a talkative donkey?", "Shrek"],
+  ["Animation", "In Ratatouille, what is the name of the rat who wants to become a chef?", "Remy"],
+  ["Animation", "Which Studio Ghibli film features a bathhouse for spirits?", "Spirited Away"],
+  ["Animation", "What instrument does Miguel play in Coco?", "Guitar"],
+  ["Sci-Fi & Fantasy", "What is the name of Han Solo's ship?", "The Millennium Falcon"],
+  ["Sci-Fi & Fantasy", "Which actor played Neo in The Matrix?", "Keanu Reeves"],
+  ["Sci-Fi & Fantasy", "What is the name of the wizarding school in Harry Potter?", "Hogwarts"],
+  ["Sci-Fi & Fantasy", "In The Lord of the Rings, who carries the One Ring to Mordor?", "Frodo Baggins"],
+  ["Sci-Fi & Fantasy", "Which TV series is set largely in Hawkins, Indiana?", "Stranger Things"],
+  ["Sci-Fi & Fantasy", "What species is Spock in Star Trek?", "Vulcan"],
+  ["Sci-Fi & Fantasy", "Which Doctor Who machine can travel through time and space?", "The TARDIS"],
+  ["Sci-Fi & Fantasy", "What is the title of the first book and film in The Hunger Games series?", "The Hunger Games"],
+  ["Sci-Fi & Fantasy", "Which superhero is also known as Diana Prince?", "Wonder Woman"],
+  ["Sci-Fi & Fantasy", "What substance weakens Superman?", "Kryptonite"],
+  ["Awards & Icons", "Who became the first woman to win the Academy Award for Best Director?", "Kathryn Bigelow"],
+  ["Awards & Icons", "Which film won Best Picture at the first Academy Awards?", "Wings"],
+  ["Awards & Icons", "Who played Rocky Balboa?", "Sylvester Stallone"],
+  ["Awards & Icons", "Which actress played Dorothy in The Wizard of Oz?", "Judy Garland"],
+  ["Awards & Icons", "Who directed Do the Right Thing and BlacKkKlansman?", "Spike Lee"],
+  ["Awards & Icons", "Which actor portrayed the Joker in The Dark Knight?", "Heath Ledger"],
+  ["Awards & Icons", "Who played Miranda Priestly in The Devil Wears Prada?", "Meryl Streep"],
+  ["Awards & Icons", "Which filmmaker directed Pulp Fiction?", "Quentin Tarantino"],
+  ["Awards & Icons", "Who played Elle Woods in Legally Blonde?", "Reese Witherspoon"],
+  ["Awards & Icons", "Which actor played T'Challa in Black Panther?", "Chadwick Boseman"],
+  ["Music & Pop Culture", "Which singer is known as the 'King of Pop'?", "Michael Jackson"],
+  ["Music & Pop Culture", "Which band recorded 'Bohemian Rhapsody'?", "Queen"],
+  ["Music & Pop Culture", "What is Beyoncé's fan base commonly called?", "The BeyHive"],
+  ["Music & Pop Culture", "Which singer released the album 21?", "Adele"],
+  ["Music & Pop Culture", "Who sang 'Like a Prayer'?", "Madonna"],
+  ["Music & Pop Culture", "Which artist's fans are known as Swifties?", "Taylor Swift"],
+  ["Music & Pop Culture", "Which singer was born Stefani Germanotta?", "Lady Gaga"],
+  ["Music & Pop Culture", "Which group featured members Sporty, Scary, Baby, Ginger, and Posh?", "The Spice Girls"],
+  ["Music & Pop Culture", "What reality competition asks contestants to 'sashay away'?", "RuPaul's Drag Race"],
+  ["Music & Pop Culture", "Which MTV reality series followed newlyweds Nick Lachey and Jessica Simpson?", "Newlyweds: Nick and Jessica"],
+  ["90s & 2000s", "Which 1997 film stars Leonardo DiCaprio and Kate Winslet as Jack and Rose?", "Titanic"],
+  ["90s & 2000s", "In The Fresh Prince of Bel-Air, which city does Will move from?", "Philadelphia"],
+  ["90s & 2000s", "Which teen drama is set in the fictional town of Capeside?", "Dawson's Creek"],
+  ["90s & 2000s", "What is the name of the coffee shop in Friends?", "Central Perk"],
+  ["90s & 2000s", "Which movie features the quote 'I see dead people'?", "The Sixth Sense"],
+  ["90s & 2000s", "Who played the title character in the TV series Buffy the Vampire Slayer?", "Sarah Michelle Gellar"],
+  ["90s & 2000s", "Which 2001 comedy introduced the character Derek Zoolander?", "Zoolander"],
+  ["90s & 2000s", "Which 1995 comedy follows two friends on a chaotic Friday in South Central Los Angeles?", "Friday"],
+  ["90s & 2000s", "Which reality show began with contestants living together in a camera-filled house and voting one another out?", "Big Brother"],
+  ["90s & 2000s", "Which actress played Mia Thermopolis in The Princess Diaries?", "Anne Hathaway"],
+  ["Streaming Era", "Which series follows the Roy family and their media empire?", "Succession"],
+  ["Streaming Era", "In The Bear, what is Carmy's profession?", "Chef"],
+  ["Streaming Era", "Which series stars Jenna Ortega as Wednesday Addams?", "Wednesday"],
+  ["Streaming Era", "What is the title of the Star Wars series starring Din Djarin and Grogu?", "The Mandalorian"],
+  ["Streaming Era", "Which Regency-era drama follows the Bridgerton family?", "Bridgerton"],
+  ["Streaming Era", "What game do contestants play in the first episode of Squid Game?", "Red Light, Green Light"],
+  ["Streaming Era", "Which comedy series follows American football coach Ted Lasso in England?", "Ted Lasso"],
+  ["Streaming Era", "In Only Murders in the Building, what brings the three central neighbors together?", "A true-crime podcast and a murder investigation"],
+  ["Streaming Era", "Which series follows chess prodigy Beth Harmon?", "The Queen's Gambit"],
+  ["Streaming Era", "Which anthology series features high-tech dystopian stories such as 'San Junipero'?", "Black Mirror"],
+  ["Characters & Quotes", "Which film features the line 'Here's looking at you, kid'?", "Casablanca"],
+  ["Characters & Quotes", "Who says 'I'll be back' in The Terminator?", "The Terminator, played by Arnold Schwarzenegger"],
+  ["Characters & Quotes", "Which character lives in a pineapple under the sea?", "SpongeBob SquarePants"],
+  ["Characters & Quotes", "What is Batman's secret identity?", "Bruce Wayne"],
+  ["Characters & Quotes", "Which character says 'To infinity and beyond'?", "Buzz Lightyear"],
+  ["Characters & Quotes", "Who is the coffee-loving mother of Rory Gilmore?", "Lorelai Gilmore"],
+  ["Characters & Quotes", "Which fictional detective lives at 221B Baker Street?", "Sherlock Holmes"],
+  ["Characters & Quotes", "What is the name of Wednesday Addams's hand companion?", "Thing"],
+  ["Characters & Quotes", "Which Parks and Recreation character is famous for loving waffles?", "Leslie Knope"],
+  ["Characters & Quotes", "Who is the chemistry teacher turned drug kingpin in Breaking Bad?", "Walter White"]
+  ];
+
+  let players=[], rounds=12, deck=[], index=0, time=45, timer=null, paused=false, revealed=false;
+  const $=s=>document.querySelector(s);
+  const $$=s=>Array.from(document.querySelectorAll(s));
+  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+  function showScreen(id){$$('.screen').forEach(x=>x.classList.toggle('active',x.id===id))}
+  function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1300)}
+  $$('.length').forEach(b=>b.addEventListener('click',()=>{$$('.length').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');rounds=+b.dataset.rounds}));
+  $('#startBtn').addEventListener('click',()=>{players=[1,2,3,4].map((n,i)=>({name:$('#p'+n).value.trim()||'Player '+n,score:0}));begin()});
+  function begin(){deck=shuffle(Q.slice());index=0;showScreen('gameScreen');renderQuestion()}
+  function renderScores(){const active=index%4;$('#scoreboard').innerHTML=players.map((p,i)=>`<div class="player ${i===active?'active':''}"><span class="player-name">${escapeHtml(p.name)}</span><strong class="player-score">${format(p.score)}</strong></div>`).join('')}
+  function renderQuestion(){
+    if(index>=rounds*4){finish();return}
+    revealed=false;paused=false;time=45;clearInterval(timer);renderTimer();
+    const q=deck[index];const round=Math.floor(index/4)+1;const turn=(index%4);
+    $('#roundLabel').textContent=`Round ${round} of ${rounds}`;$('#turnLabel').textContent=`Question ${index+1} of ${rounds*4}`;$('#progressFill').style.width=(index/(rounds*4)*100)+'%';
+    $('#category').textContent=q[0].toUpperCase()+' · '+players[turn].name.toUpperCase();$('#question').textContent=q[1];$('#answer').textContent=q[2];$('#answer').classList.remove('show');
+    $('#judgement').classList.remove('show');$('#questionControls').style.display='flex';renderScores();startTimer();
+  }
+  function startTimer(){clearInterval(timer);timer=setInterval(()=>{if(!paused&&time>0){time--;renderTimer();if(time===0){clearInterval(timer);toast('Time’s up — reveal when ready')}}},1000)}
+  function renderTimer(){$('#timerNum').textContent=time;$('#timerState').textContent=paused?'paused':'seconds';$('#timerBtn').style.setProperty('--time',time/45);$('#timerBtn').classList.toggle('danger',time<=10&&time>0);$('#timerBtn').setAttribute('aria-label',paused?'Resume timer':'Pause timer')}
+  $('#timerBtn').addEventListener('click',()=>{if(revealed)return;paused=!paused;renderTimer()});
+  $('#revealBtn').addEventListener('click',()=>{revealed=true;clearInterval(timer);$('#answer').classList.add('show');$('#questionControls').style.display='none';$('#judgement').classList.add('show');renderSteals()});
+  $('#skipBtn').addEventListener('click',()=>{const replacement=deck.pop();deck[index]=replacement;toast('Fresh question');renderQuestion()});
+  function renderSteals(){const current=index%4;$('#stealRow').innerHTML='<span>Award a ½-point steal:</span>'+players.map((p,i)=>i===current?'':`<button class="steal" data-i="${i}">${escapeHtml(p.name)}</button>`).join('');$$('.steal').forEach(b=>b.addEventListener('click',()=>scoreAndNext(null,+b.dataset.i)))}
+  $('#correctBtn').addEventListener('click',()=>scoreAndNext(1,null));$('#missBtn').addEventListener('click',()=>scoreAndNext(0,null));
+  function scoreAndNext(points,steal){if(points!==null)players[index%4].score+=points;if(steal!==null)players[steal].score+=.5;index++;renderQuestion()}
+  function finish(){clearInterval(timer);$('#progressFill').style.width='100%';const sorted=players.map((p,i)=>({...p,order:i})).sort((a,b)=>b.score-a.score);const top=sorted[0].score;const winners=sorted.filter(p=>p.score===top);$('#winnerTitle').textContent=winners.length===1?`${winners[0].name} takes the crown!`:'It’s a tie at the top!';$('#winnerCopy').textContent=winners.length===1?`A winning score of ${format(top)} points after ${rounds} rounds.`:`${winners.map(w=>w.name).join(' & ')} finish level on ${format(top)} points.`;$('#finalList').innerHTML=sorted.map((p,i)=>`<div class="final-row"><span class="rank">${i+1}</span><strong>${escapeHtml(p.name)}</strong><strong>${format(p.score)} pts</strong></div>`).join('');showScreen('finishScreen')}
+  $('#samePlayersBtn').addEventListener('click',()=>{players.forEach(p=>p.score=0);begin()});$('#newGameBtn').addEventListener('click',()=>{showScreen('setupScreen')});
+  function format(n){return Number.isInteger(n)?n:n.toFixed(1)}function escapeHtml(s){return s.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+})();
+</script>
+</body>
+</html>
